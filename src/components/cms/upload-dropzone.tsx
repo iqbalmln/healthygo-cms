@@ -17,6 +17,10 @@ export function UploadDropzone({ accept = "image/*,video/*", onFileSelected, cla
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
+  const acceptsVideo = accept.includes("video");
+  const acceptsImage = accept.includes("image");
+  const hint = acceptsImage && acceptsVideo ? "Images or videos" : acceptsVideo ? "Videos only" : "Images only";
+
   function handleFiles(files: FileList | null) {
     const file = files?.[0];
     if (file) onFileSelected(file);
@@ -44,7 +48,7 @@ export function UploadDropzone({ accept = "image/*,video/*", onFileSelected, cla
     >
       <UploadCloud className="size-6 text-muted-foreground" />
       <p className="text-foreground text-sm">{label ?? "Click to upload or drag and drop"}</p>
-      <p className="text-muted-foreground text-xs">Images or videos</p>
+      <p className="text-muted-foreground text-xs">{hint}</p>
       <input
         ref={inputRef}
         type="file"

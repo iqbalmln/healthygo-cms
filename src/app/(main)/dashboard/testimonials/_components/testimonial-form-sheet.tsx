@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { UploadDropzone } from "@/components/cms/upload-dropzone";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -26,15 +27,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
+import { getPromoSlotId, PROMO_PAGE_SLOTS } from "@/lib/promo-pages";
 
 import type { TestimonialRow } from "./data";
 
 const formSchema = z.object({
-  clientName: z.string().min(1, { message: "Client name is required." }),
-  company: z.string().min(1, { message: "Company is required." }),
-  rating: z.number().min(1).max(5),
-  quote: z.string().min(1, { message: "Quote is required." }),
+  imageUrl: z.string().min(1, { message: "Testimonial image is required." }),
+  pageId: z.string().min(1, { message: "Page is required." }),
+  order: z.number().min(1),
   status: z.enum(["Published", "Hidden"]),
 });
 
@@ -44,13 +44,15 @@ interface TestimonialFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   testimonial?: TestimonialRow;
-  onSubmit: (values: FormValues) => void;
+  onSubmit: (
+    values: Omit<FormValues, "pageId"> & { category: TestimonialRow["category"]; variant: TestimonialRow["variant"] },
+  ) => void;
 }
 
 export function TestimonialFormSheet({ open, onOpenChange, testimonial, onSubmit }: TestimonialFormSheetProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { clientName: "", company: "", rating: 5, quote: "", status: "Published" },
+    defaultValues: { imageUrl: "", pageId: "", order: 1, status: "Published" },
   });
 
   React.useEffect(() => {
@@ -58,19 +60,21 @@ export function TestimonialFormSheet({ open, onOpenChange, testimonial, onSubmit
       form.reset(
         testimonial
           ? {
-              clientName: testimonial.clientName,
-              company: testimonial.company,
-              rating: testimonial.rating,
-              quote: testimonial.quote,
+              imageUrl: testimonial.imageUrl,
+              pageId: getPromoSlotId(testimonial.category, testimonial.variant),
+              order: testimonial.order,
               status: testimonial.status,
             }
-          : { clientName: "", company: "", rating: 5, quote: "", status: "Published" },
+          : { imageUrl: "", pageId: "", order: 1, status: "Published" },
       );
     }
   }, [open, testimonial, form]);
 
   function handleSubmit(values: FormValues) {
-    onSubmit(values);
+    const slot = PROMO_PAGE_SLOTS.find((s) => s.id === values.pageId);
+    if (!slot) return;
+    const { pageId: _pageId, ...rest } = values;
+    onSubmit({ ...rest, category: slot.category, variant: slot.variant });
     onOpenChange(false);
   }
 
@@ -79,7 +83,9 @@ export function TestimonialFormSheet({ open, onOpenChange, testimonial, onSubmit
       <SheetContent side="right" className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>{testimonial ? "Edit Testimonial" : "New Testimonial"}</SheetTitle>
-          <SheetDescription>Client reviews displayed on the public site.</SheetDescription>
+          <SheetDescription>
+            Upload a testimonial image (screenshot of the review, rating, and client info).
+          </SheetDescription>
         </SheetHeader>
 
         <form
@@ -90,11 +96,19 @@ export function TestimonialFormSheet({ open, onOpenChange, testimonial, onSubmit
           <FieldGroup className="gap-4">
             <Controller
               control={form.control}
-              name="clientName"
+              name="imageUrl"
               render={({ field, fieldState }) => (
                 <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="testimonial-client">Client name</FieldLabel>
-                  <Input {...field} id="testimonial-client" aria-invalid={fieldState.invalid} />
+                  <FieldLabel>Testimonial image</FieldLabel>
+                  {field.value ? (
+                    // biome-ignore lint/performance/noImgElement: preview comes from blob/external URLs not configured in next/image
+                    <img src={field.value} alt="Testimonial" className="w-full rounded-md object-cover" />
+                  ) : null}
+                  <UploadDropzone
+                    accept="image/*"
+                    label={field.value ? "Click to replace image" : "Click to upload or drag and drop"}
+                    onFileSelected={(file) => field.onChange(URL.createObjectURL(file))}
+                  />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -102,47 +116,43 @@ export function TestimonialFormSheet({ open, onOpenChange, testimonial, onSubmit
 
             <Controller
               control={form.control}
-              name="company"
+              name="pageId"
               render={({ field, fieldState }) => (
                 <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="testimonial-company">Company</FieldLabel>
-                  <Input {...field} id="testimonial-company" aria-invalid={fieldState.invalid} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
-
-            <Controller
-              control={form.control}
-              name="rating"
-              render={({ field }) => (
-                <Field className="gap-1.5">
-                  <FieldLabel htmlFor="testimonial-rating">Rating</FieldLabel>
-                  <Select value={`${field.value}`} onValueChange={(value) => field.onChange(Number(value))}>
-                    <SelectTrigger id="testimonial-rating" className="w-full">
-                      <SelectValue />
+                  <FieldLabel htmlFor="testimonial-page">Page</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="testimonial-page" className="w-full" aria-invalid={fieldState.invalid}>
+                      <SelectValue placeholder="Select a page" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectOptionGroup>
-                        {[5, 4, 3, 2, 1].map((value) => (
-                          <SelectItem key={value} value={`${value}`}>
-                            {value} star{value > 1 ? "s" : ""}
+                        {PROMO_PAGE_SLOTS.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id}>
+                            {slot.label}
                           </SelectItem>
                         ))}
                       </SelectOptionGroup>
                     </SelectContent>
                   </Select>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
 
             <Controller
               control={form.control}
-              name="quote"
+              name="order"
               render={({ field, fieldState }) => (
                 <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="testimonial-quote">Quote</FieldLabel>
-                  <Textarea {...field} id="testimonial-quote" rows={4} aria-invalid={fieldState.invalid} />
+                  <FieldLabel htmlFor="testimonial-order">Order</FieldLabel>
+                  <Input
+                    {...field}
+                    id="testimonial-order"
+                    type="number"
+                    min={1}
+                    onChange={(event) => field.onChange(Number(event.target.value))}
+                    aria-invalid={fieldState.invalid}
+                  />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}

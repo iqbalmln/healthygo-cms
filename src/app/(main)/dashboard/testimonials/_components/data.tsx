@@ -1,37 +1,39 @@
+import type { PromoCategory, PromoVariant } from "@/lib/promo-pages";
+
 export type TestimonialStatus = "Published" | "Hidden";
 
 export type TestimonialRow = {
   id: string;
-  clientName: string;
-  company: string;
-  rating: number;
-  quote: string;
+  imageUrl: string;
+  category: PromoCategory;
+  variant: PromoVariant;
+  order: number;
   status: TestimonialStatus;
 };
 
 export const initialTestimonials: TestimonialRow[] = [
   {
     id: "1",
-    clientName: "Sarah Putri",
-    company: "PT Maju Bersama",
-    rating: 5,
-    quote: "Pelayanan sangat profesional dan hasil kerja melebihi ekspektasi kami.",
+    imageUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&q=60",
+    category: "fatloss",
+    variant: "main",
+    order: 1,
     status: "Published",
   },
   {
     id: "2",
-    clientName: "Budi Santoso",
-    company: "CV Karya Abadi",
-    rating: 4,
-    quote: "Tim yang responsif dan komunikatif sepanjang proyek berjalan.",
+    imageUrl: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=600&q=60",
+    category: "lean-muscle",
+    variant: "1",
+    order: 2,
     status: "Published",
   },
   {
     id: "3",
-    clientName: "Maria Lestari",
-    company: "Lestari Group",
-    rating: 5,
-    quote: "Kami sangat puas dengan hasil akhir dan dukungan after-sales.",
+    imageUrl: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=60",
+    category: "pregnancy",
+    variant: "main",
+    order: 3,
     status: "Hidden",
   },
 ];

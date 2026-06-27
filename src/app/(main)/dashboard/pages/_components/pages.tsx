@@ -15,26 +15,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getCategoryLabel, getPromoSlotId } from "@/lib/promo-pages";
 
-import { initialPages, type PageRow } from "./data";
+import { getPagePath, initialPages, type PageRow } from "./data";
 import { PageFormSheet } from "./page-form-sheet";
 
 export function Pages() {
   const [pages, setPages] = React.useState<PageRow[]>(initialPages);
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [editingPage, setEditingPage] = React.useState<PageRow | undefined>(undefined);
+  const [error, setError] = React.useState<string | undefined>(undefined);
 
   function openCreate() {
     setEditingPage(undefined);
+    setError(undefined);
     setSheetOpen(true);
   }
 
   function openEdit(page: PageRow) {
     setEditingPage(page);
+    setError(undefined);
     setSheetOpen(true);
   }
 
   function handleSubmit(values: Omit<PageRow, "id" | "updatedAt">) {
+    const id = getPromoSlotId(values.category, values.variant);
+    const conflict = pages.some((page) => page.id === id && page.id !== editingPage?.id);
+    if (conflict) {
+      setError("A page for this category and variant already exists.");
+      return;
+    }
+
     const updatedAt = new Date().toLocaleString("en-US", {
       day: "2-digit",
       month: "short",
@@ -44,10 +55,14 @@ export function Pages() {
     });
 
     if (editingPage) {
-      setPages((prev) => prev.map((page) => (page.id === editingPage.id ? { ...page, ...values, updatedAt } : page)));
+      setPages((prev) =>
+        prev.map((page) => (page.id === editingPage.id ? { ...page, ...values, id, updatedAt } : page)),
+      );
     } else {
-      setPages((prev) => [...prev, { ...values, id: values.slug, updatedAt }]);
+      setPages((prev) => [...prev, { ...values, id, updatedAt }]);
     }
+    setError(undefined);
+    setSheetOpen(false);
   }
 
   function handleDelete(id: string) {
@@ -61,8 +76,18 @@ export function Pages() {
       cell: (row) => (
         <div className="min-w-0">
           <div className="truncate font-medium text-sm">{row.title}</div>
-          <div className="truncate text-muted-foreground text-sm">/{row.slug}</div>
+          <div className="truncate text-muted-foreground text-sm">{getPagePath(row)}</div>
         </div>
+      ),
+    },
+    {
+      id: "category",
+      header: "Category",
+      cell: (row) => (
+        <Badge variant="outline">
+          {getCategoryLabel(row.category)}
+          {row.category !== "home" ? ` — ${row.variant === "main" ? "Main" : `Variant ${row.variant}`}` : ""}
+        </Badge>
       ),
     },
     {
@@ -110,7 +135,7 @@ export function Pages() {
       <CardHeader className="border-b">
         <CardTitle className="text-xl leading-none">Pages</CardTitle>
         <CardDescription className="max-w-sm leading-snug">
-          Manage static pages for the public company profile site.
+          Manage content for the 16 fixed promo pages (home + 5 categories x 3 variants).
         </CardDescription>
         <CardAction>
           <Button size="sm" onClick={openCreate}>
@@ -122,7 +147,13 @@ export function Pages() {
         <SimpleDataTable columns={columns} rows={pages} getRowId={(row) => row.id} />
       </CardContent>
 
-      <PageFormSheet open={sheetOpen} onOpenChange={setSheetOpen} page={editingPage} onSubmit={handleSubmit} />
+      <PageFormSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        page={editingPage}
+        onSubmit={handleSubmit}
+        error={error}
+      />
     </Card>
   );
 }

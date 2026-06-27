@@ -11,6 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectGroup as SelectOptionGroup,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sheet,
   SheetClose,
   SheetContent,
@@ -20,13 +28,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { getPromoSlotId, PROMO_PAGE_SLOTS } from "@/lib/promo-pages";
 
 import type { BannerRow } from "./data";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   imageUrl: z.string().min(1, { message: "Banner image is required." }),
-  linkUrl: z.string().min(1, { message: "Link URL is required." }),
+  pageId: z.string().min(1, { message: "Page is required." }),
   order: z.number().min(1),
   active: z.boolean(),
 });
@@ -37,13 +46,19 @@ interface BannerFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   banner?: BannerRow;
-  onSubmit: (values: FormValues) => void;
+  onSubmit: (
+    values: Omit<FormValues, "pageId"> & {
+      category: BannerRow["category"];
+      variant: BannerRow["variant"];
+      linkUrl: string;
+    },
+  ) => void;
 }
 
 export function BannerFormSheet({ open, onOpenChange, banner, onSubmit }: BannerFormSheetProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { title: "", imageUrl: "", linkUrl: "", order: 1, active: true },
+    defaultValues: { title: "", imageUrl: "", pageId: "", order: 1, active: true },
   });
 
   React.useEffect(() => {
@@ -53,17 +68,20 @@ export function BannerFormSheet({ open, onOpenChange, banner, onSubmit }: Banner
           ? {
               title: banner.title,
               imageUrl: banner.imageUrl,
-              linkUrl: banner.linkUrl,
+              pageId: getPromoSlotId(banner.category, banner.variant),
               order: banner.order,
               active: banner.active,
             }
-          : { title: "", imageUrl: "", linkUrl: "", order: 1, active: true },
+          : { title: "", imageUrl: "", pageId: "", order: 1, active: true },
       );
     }
   }, [open, banner, form]);
 
   function handleSubmit(values: FormValues) {
-    onSubmit(values);
+    const slot = PROMO_PAGE_SLOTS.find((s) => s.id === values.pageId);
+    if (!slot) return;
+    const { pageId: _pageId, ...rest } = values;
+    onSubmit({ ...rest, category: slot.category, variant: slot.variant, linkUrl: slot.path });
     onOpenChange(false);
   }
 
@@ -119,11 +137,24 @@ export function BannerFormSheet({ open, onOpenChange, banner, onSubmit }: Banner
 
             <Controller
               control={form.control}
-              name="linkUrl"
+              name="pageId"
               render={({ field, fieldState }) => (
                 <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="banner-link">Link URL</FieldLabel>
-                  <Input {...field} id="banner-link" placeholder="/promo" aria-invalid={fieldState.invalid} />
+                  <FieldLabel htmlFor="banner-page">Page</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="banner-page" className="w-full" aria-invalid={fieldState.invalid}>
+                      <SelectValue placeholder="Select a page" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectOptionGroup>
+                        {PROMO_PAGE_SLOTS.map((slot) => (
+                          <SelectItem key={slot.id} value={slot.id}>
+                            {slot.label}
+                          </SelectItem>
+                        ))}
+                      </SelectOptionGroup>
+                    </SelectContent>
+                  </Select>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}

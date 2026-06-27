@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { MoreHorizontal, Plus, Star } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 
 import { type SimpleColumn, SimpleDataTable } from "@/components/cms/simple-data-table";
 import { Badge } from "@/components/ui/badge";
@@ -15,26 +15,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { getPromoSlotId, PROMO_PAGE_SLOTS } from "@/lib/promo-pages";
 
 import { initialTestimonials, type TestimonialRow } from "./data";
 import { TestimonialFormSheet } from "./testimonial-form-sheet";
 
-function RatingCell({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {["one", "two", "three", "four", "five"].map((position, index) => (
-        <Star
-          key={position}
-          className={cn("size-3.5", index < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground")}
-        />
-      ))}
-    </div>
-  );
+function getPageLabel(row: TestimonialRow) {
+  const id = getPromoSlotId(row.category, row.variant);
+  return PROMO_PAGE_SLOTS.find((slot) => slot.id === id)?.label ?? id;
 }
 
 export function Testimonials() {
-  const [testimonials, setTestimonials] = React.useState<TestimonialRow[]>(initialTestimonials);
+  const [testimonials, setTestimonials] = React.useState<TestimonialRow[]>(
+    [...initialTestimonials].sort((a, b) => a.order - b.order),
+  );
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<TestimonialRow | undefined>(undefined);
 
@@ -50,9 +44,11 @@ export function Testimonials() {
 
   function handleSubmit(values: Omit<TestimonialRow, "id">) {
     if (editing) {
-      setTestimonials((prev) => prev.map((row) => (row.id === editing.id ? { ...row, ...values } : row)));
+      setTestimonials((prev) =>
+        prev.map((row) => (row.id === editing.id ? { ...row, ...values } : row)).sort((a, b) => a.order - b.order),
+      );
     } else {
-      setTestimonials((prev) => [...prev, { ...values, id: crypto.randomUUID() }]);
+      setTestimonials((prev) => [...prev, { ...values, id: crypto.randomUUID() }].sort((a, b) => a.order - b.order));
     }
   }
 
@@ -62,21 +58,19 @@ export function Testimonials() {
 
   const columns: SimpleColumn<TestimonialRow>[] = [
     {
-      id: "client",
-      header: "Client",
+      id: "image",
+      header: "Testimonial",
       cell: (row) => (
-        <div className="min-w-0">
-          <div className="truncate font-medium text-sm">{row.clientName}</div>
-          <div className="truncate text-muted-foreground text-sm">{row.company}</div>
-        </div>
+        // biome-ignore lint/performance/noImgElement: preview comes from blob/external URLs not configured in next/image
+        <img src={row.imageUrl} alt="Testimonial" className="h-16 w-28 rounded-md object-cover" />
       ),
     },
-    { id: "rating", header: "Rating", cell: (row) => <RatingCell rating={row.rating} /> },
     {
-      id: "quote",
-      header: "Quote",
-      cell: (row) => <p className="max-w-sm truncate text-sm">{row.quote}</p>,
+      id: "page",
+      header: "Page",
+      cell: (row) => <Badge variant="outline">{getPageLabel(row)}</Badge>,
     },
+    { id: "order", header: "Order", cell: (row) => <span className="text-sm">{row.order}</span> },
     {
       id: "status",
       header: "Status",
@@ -90,7 +84,7 @@ export function Testimonials() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                aria-label={`Open actions for ${row.clientName}`}
+                aria-label="Open actions"
                 className="size-8 rounded-md text-muted-foreground hover:bg-muted/50"
                 size="icon-sm"
                 variant="ghost"
@@ -116,7 +110,9 @@ export function Testimonials() {
     <Card>
       <CardHeader className="border-b">
         <CardTitle className="text-xl leading-none">Testimonials</CardTitle>
-        <CardDescription className="max-w-sm leading-snug">Client reviews shown on the public site.</CardDescription>
+        <CardDescription className="max-w-sm leading-snug">
+          Testimonial images shown on the public site.
+        </CardDescription>
         <CardAction>
           <Button size="sm" onClick={openCreate}>
             <Plus /> New Testimonial
