@@ -1,6 +1,5 @@
-import { users } from "./_components/data";
-import { Users } from "./_components/users";
+import { AdminProfile } from "./_components/admin-profile";
 
 export default function Page() {
-  return <Users users={users} />;
+  return <AdminProfile />;
 }
