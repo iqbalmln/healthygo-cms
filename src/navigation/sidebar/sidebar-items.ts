@@ -1,12 +1,4 @@
-import {
-  FileText,
-  GalleryHorizontal,
-  Images,
-  LayoutDashboard,
-  type LucideIcon,
-  MessagesSquare,
-  User,
-} from "lucide-react";
+import { FileText, Images, LayoutDashboard, type LucideIcon, User } from "lucide-react";
 
 export type NavBadge = "new" | "soon";
 
@@ -68,18 +60,6 @@ export const sidebarItems: NavGroup[] = [
         title: "Gallery",
         url: "/dashboard/gallery",
         icon: Images,
-      },
-      {
-        id: "testimonials",
-        title: "Testimonials",
-        url: "/dashboard/testimonials",
-        icon: MessagesSquare,
-      },
-      {
-        id: "banners",
-        title: "Banners",
-        url: "/dashboard/banners",
-        icon: GalleryHorizontal,
       },
       {
         id: "users",

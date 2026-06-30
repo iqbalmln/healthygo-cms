@@ -1,26 +1,27 @@
+"use client";
+
 import { FileText, Images } from "lucide-react";
 
-import { initialBanners } from "@/app/(main)/dashboard/banners/_components/data";
 import { initialMedia } from "@/app/(main)/dashboard/gallery/_components/data";
-import { initialPages } from "@/app/(main)/dashboard/pages/_components/data";
+import { usePagesStore } from "@/app/(main)/dashboard/pages/_components/pages-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function MetricCards() {
-  const totalPages = initialPages.length;
-  const totalImagesAndBanners = initialMedia.length + initialBanners.length;
+  const totalPages = usePagesStore((state) => state.pages.length);
+  const totalImages = initialMedia.length;
 
   const metrics = [
     {
       icon: FileText,
       label: "Total Pages",
       value: `${totalPages}`,
-      description: "Static pages published",
+      description: "Promo pages created",
     },
     {
       icon: Images,
-      label: "Total Images / Banners",
-      value: `${totalImagesAndBanners}`,
-      description: `${initialMedia.length} gallery items, ${initialBanners.length} banners`,
+      label: "Total Images",
+      value: `${totalImages}`,
+      description: "Gallery items",
     },
   ];
 

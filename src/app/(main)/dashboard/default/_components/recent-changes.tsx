@@ -2,7 +2,7 @@ import { type SimpleColumn, SimpleDataTable } from "@/components/cms/simple-data
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-type ContentType = "Page" | "Gallery" | "Testimonial" | "Banner" | "Profile";
+type ContentType = "Page" | "Gallery" | "Profile";
 
 interface ActivityRow {
   id: string;
@@ -25,9 +25,9 @@ const activity: ActivityRow[] = [
   {
     id: "2",
     admin: "Iqbal Maulana",
-    action: "Added",
-    target: "Year End Promo",
-    type: "Banner",
+    action: "Updated",
+    target: "Fat Loss - Promo section",
+    type: "Page",
     changedAt: "26 Jun 2026, 4:45 PM",
   },
   {
@@ -41,9 +41,9 @@ const activity: ActivityRow[] = [
   {
     id: "4",
     admin: "Iqbal Maulana",
-    action: "Hid",
-    target: "Maria Lestari's review",
-    type: "Testimonial",
+    action: "Updated",
+    target: "Pregnancy - Testimonial section",
+    type: "Page",
     changedAt: "24 Jun 2026, 11:05 AM",
   },
   {
@@ -59,8 +59,6 @@ const activity: ActivityRow[] = [
 const typeBadgeClass: Record<ContentType, string> = {
   Page: "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-400",
   Gallery: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400",
-  Testimonial: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  Banner: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   Profile: "border-border bg-muted/50 text-muted-foreground",
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { useRouter } from "next/navigation";
 
 import { MoreHorizontal, Plus } from "lucide-react";
 
@@ -15,59 +15,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getCategoryLabel, getPromoSlotId } from "@/lib/promo-pages";
+import { getCategoryLabel, getPromoPagePath } from "@/lib/promo-pages";
 
-import { getPagePath, initialPages, type PageRow } from "./data";
-import { PageFormSheet } from "./page-form-sheet";
+import type { PageRow } from "./data";
+import { usePagesStore } from "./pages-store";
 
 export function Pages() {
-  const [pages, setPages] = React.useState<PageRow[]>(initialPages);
-  const [sheetOpen, setSheetOpen] = React.useState(false);
-  const [editingPage, setEditingPage] = React.useState<PageRow | undefined>(undefined);
-  const [error, setError] = React.useState<string | undefined>(undefined);
-
-  function openCreate() {
-    setEditingPage(undefined);
-    setError(undefined);
-    setSheetOpen(true);
-  }
-
-  function openEdit(page: PageRow) {
-    setEditingPage(page);
-    setError(undefined);
-    setSheetOpen(true);
-  }
-
-  function handleSubmit(values: Omit<PageRow, "id" | "updatedAt">) {
-    const id = getPromoSlotId(values.category, values.variant);
-    const conflict = pages.some((page) => page.id === id && page.id !== editingPage?.id);
-    if (conflict) {
-      setError("A page for this category and variant already exists.");
-      return;
-    }
-
-    const updatedAt = new Date().toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-
-    if (editingPage) {
-      setPages((prev) =>
-        prev.map((page) => (page.id === editingPage.id ? { ...page, ...values, id, updatedAt } : page)),
-      );
-    } else {
-      setPages((prev) => [...prev, { ...values, id, updatedAt }]);
-    }
-    setError(undefined);
-    setSheetOpen(false);
-  }
-
-  function handleDelete(id: string) {
-    setPages((prev) => prev.filter((page) => page.id !== id));
-  }
+  const router = useRouter();
+  const pages = usePagesStore((state) => state.pages);
+  const removePage = usePagesStore((state) => state.removePage);
 
   const columns: SimpleColumn<PageRow>[] = [
     {
@@ -76,7 +32,7 @@ export function Pages() {
       cell: (row) => (
         <div className="min-w-0">
           <div className="truncate font-medium text-sm">{row.title}</div>
-          <div className="truncate text-muted-foreground text-sm">{getPagePath(row)}</div>
+          <div className="truncate text-muted-foreground text-sm">{getPromoPagePath(row.category, row.variant)}</div>
         </div>
       ),
     },
@@ -117,9 +73,9 @@ export function Pages() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openEdit(row)}>Edit page</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push(`/dashboard/pages/${row.id}`)}>Edit page</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.id)}>
+              <DropdownMenuItem variant="destructive" onClick={() => removePage(row.id)}>
                 Delete page
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -135,10 +91,10 @@ export function Pages() {
       <CardHeader className="border-b">
         <CardTitle className="text-xl leading-none">Pages</CardTitle>
         <CardDescription className="max-w-sm leading-snug">
-          Manage content for the 16 fixed promo pages (home + 5 categories x 3 variants).
+          Manage content for the promo pages (home + 5 categories x 3 variants).
         </CardDescription>
         <CardAction>
-          <Button size="sm" onClick={openCreate}>
+          <Button size="sm" onClick={() => router.push("/dashboard/pages/new")}>
             <Plus /> New Page
           </Button>
         </CardAction>
@@ -146,14 +102,6 @@ export function Pages() {
       <CardContent className="px-0">
         <SimpleDataTable columns={columns} rows={pages} getRowId={(row) => row.id} />
       </CardContent>
-
-      <PageFormSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        page={editingPage}
-        onSubmit={handleSubmit}
-        error={error}
-      />
     </Card>
   );
 }
