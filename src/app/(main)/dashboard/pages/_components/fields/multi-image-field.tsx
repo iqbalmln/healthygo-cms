@@ -21,8 +21,8 @@ export function MultiImageField<T extends FieldValues>({ control, name, label }:
       render={({ field }) => {
         const images = (field.value as string[]) ?? [];
 
-        function addImage(file: File) {
-          field.onChange([...images, URL.createObjectURL(file)]);
+        function addImages(files: File[]) {
+          field.onChange([...images, ...files.map((file) => URL.createObjectURL(file))]);
         }
 
         function removeImage(index: number) {
@@ -49,7 +49,13 @@ export function MultiImageField<T extends FieldValues>({ control, name, label }:
                 </div>
               ))}
             </div>
-            <UploadDropzone accept="image/*" label="Add image" className="max-w-xs p-4" onFileSelected={addImage} />
+            <UploadDropzone
+              accept="image/*"
+              label="Add images"
+              className="max-w-xs p-4"
+              multiple
+              onFilesSelected={addImages}
+            />
           </Field>
         );
       }}

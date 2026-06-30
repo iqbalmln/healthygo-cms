@@ -1,18 +1,20 @@
 import { z } from "zod";
 
-import { PROMO_CATEGORIES, type PromoCategory, type PromoVariant } from "@/lib/promo-pages";
+import { PROMO_CATEGORIES, type PromoCategory } from "@/lib/promo-pages";
 
 import { createEmptySections, type PageRow } from "./data";
 
 const ctaSchema = z.object({ text: z.string(), link: z.string() });
 const iconTextItemSchema = z.object({ icon: z.string(), text: z.string() });
+const textItemSchema = z.object({ text: z.string() });
 
 const sectionsSchema = z.object({
   hero: z.object({
     enabled: z.boolean(),
     title: z.string(),
     subtitle: z.string(),
-    advantages: z.array(iconTextItemSchema),
+    price: z.string().regex(/^\d*$/, { message: "Price must contain numbers only." }),
+    advantages: z.array(textItemSchema),
   }),
   testimonial: z.object({
     enabled: z.boolean(),
@@ -43,7 +45,10 @@ const sectionsSchema = z.object({
 export const pageEditorFormSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   category: z.enum(PROMO_CATEGORIES.map((c) => c.value) as [PromoCategory, ...PromoCategory[]]),
-  variant: z.enum(["main", "1", "2"] as [PromoVariant, ...PromoVariant[]]),
+  variant: z
+    .string()
+    .min(1, { message: "Variant is required." })
+    .regex(/^[a-z0-9-]+$/, { message: "Variant may only contain lowercase letters, numbers, and dashes." }),
   status: z.enum(["Published", "Draft"]),
   sections: sectionsSchema,
 });

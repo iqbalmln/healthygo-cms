@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { getPromoSlotId, getVariantsForCategory, PROMO_CATEGORIES } from "@/lib/promo-pages";
+import { getPromoSlotId, MAIN_VARIANT, PROMO_CATEGORIES } from "@/lib/promo-pages";
 
 import { type PageRow, type PageSections, SECTION_LABELS } from "./data";
 import { type PageEditorFormValues, pageEditorFormSchema, pageToFormValues } from "./page-editor-form-schema";
@@ -65,13 +65,15 @@ export function PageEditor({ mode, page }: PageEditorProps) {
   });
 
   const category = form.watch("category");
-  const availableVariants = getVariantsForCategory(category);
+  const variant = form.watch("variant");
+  const isMain = variant === MAIN_VARIANT;
 
   React.useEffect(() => {
-    if (mode === "create" && !availableVariants.some((v) => v.value === form.getValues("variant"))) {
-      form.setValue("variant", availableVariants[0].value);
+    // The home page is a single fixed slot — there's no such thing as a home variant.
+    if (mode === "create" && category === "home" && variant !== MAIN_VARIANT) {
+      form.setValue("variant", MAIN_VARIANT);
     }
-  }, [availableVariants, form, mode]);
+  }, [category, variant, form, mode]);
 
   function handleSubmit(values: PageEditorFormValues) {
     const id = getPromoSlotId(values.category, values.variant);
@@ -141,27 +143,31 @@ export function PageEditor({ mode, page }: PageEditorProps) {
           <Controller
             control={form.control}
             name="variant"
-            render={({ field }) => (
-              <Field className="gap-1.5">
+            render={({ field, fieldState }) => (
+              <Field className="gap-1.5" data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="page-variant">Variant</FieldLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={mode === "edit" || availableVariants.length === 1}
-                >
-                  <SelectTrigger id="page-variant" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectOptionGroup>
-                      {availableVariants.map((v) => (
-                        <SelectItem key={v.value} value={v.value}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectOptionGroup>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="page-variant-main"
+                    checked={isMain}
+                    disabled={mode === "edit" || category === "home"}
+                    onCheckedChange={(checked) => field.onChange(checked ? MAIN_VARIANT : "")}
+                  />
+                  <label htmlFor="page-variant-main" className="text-muted-foreground text-sm">
+                    Main page (/{category})
+                  </label>
+                </div>
+                {!isMain && category !== "home" ? (
+                  <Input
+                    id="page-variant"
+                    value={field.value}
+                    onChange={field.onChange}
+                    disabled={mode === "edit"}
+                    placeholder="e.g. promo-juni"
+                    aria-invalid={fieldState.invalid}
+                  />
+                ) : null}
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
             )}
           />

@@ -4,9 +4,10 @@ export type PageStatus = "Published" | "Draft";
 
 export type CtaWhatsapp = { text: string; link: string };
 export type IconTextItem = { icon: string; text: string };
+export type TextItem = { text: string };
 
 export type PageSections = {
-  hero: { enabled: boolean; title: string; subtitle: string; advantages: IconTextItem[] };
+  hero: { enabled: boolean; title: string; subtitle: string; price: string; advantages: TextItem[] };
   testimonial: { enabled: boolean; title: string; subtitle: string; cta: CtaWhatsapp; images: string[] };
   ourProgram: { enabled: boolean; images: string[] };
   rekor: { enabled: boolean; title: string; subtitle: string; description: string; image: string };
@@ -28,7 +29,7 @@ export type PageRow = {
 
 export function createEmptySections(): PageSections {
   return {
-    hero: { enabled: false, title: "", subtitle: "", advantages: [] },
+    hero: { enabled: false, title: "", subtitle: "", price: "", advantages: [] },
     testimonial: { enabled: false, title: "", subtitle: "", cta: { text: "", link: "" }, images: [] },
     ourProgram: { enabled: false, images: [] },
     rekor: { enabled: false, title: "", subtitle: "", description: "", image: "" },

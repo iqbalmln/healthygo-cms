@@ -8,12 +8,21 @@ import { cn } from "@/lib/utils";
 
 interface UploadDropzoneProps {
   accept?: string;
-  onFileSelected: (file: File) => void;
+  onFileSelected?: (file: File) => void;
+  onFilesSelected?: (files: File[]) => void;
+  multiple?: boolean;
   className?: string;
   label?: string;
 }
 
-export function UploadDropzone({ accept = "image/*,video/*", onFileSelected, className, label }: UploadDropzoneProps) {
+export function UploadDropzone({
+  accept = "image/*,video/*",
+  onFileSelected,
+  onFilesSelected,
+  multiple = false,
+  className,
+  label,
+}: UploadDropzoneProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
@@ -22,8 +31,12 @@ export function UploadDropzone({ accept = "image/*,video/*", onFileSelected, cla
   const hint = acceptsImage && acceptsVideo ? "Images or videos" : acceptsVideo ? "Videos only" : "Images only";
 
   function handleFiles(files: FileList | null) {
-    const file = files?.[0];
-    if (file) onFileSelected(file);
+    if (!files || files.length === 0) return;
+    if (multiple && onFilesSelected) {
+      onFilesSelected(Array.from(files));
+    } else if (files[0]) {
+      onFileSelected?.(files[0]);
+    }
   }
 
   return (
@@ -53,6 +66,7 @@ export function UploadDropzone({ accept = "image/*,video/*", onFileSelected, cla
         ref={inputRef}
         type="file"
         accept={accept}
+        multiple={multiple}
         className="hidden"
         onChange={(event) => handleFiles(event.target.files)}
       />
