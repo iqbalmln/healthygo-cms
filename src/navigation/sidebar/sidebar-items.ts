@@ -56,12 +56,6 @@ export const sidebarItems: NavGroup[] = [
         icon: FileText,
       },
       {
-        id: "gallery",
-        title: "Gallery",
-        url: "/dashboard/gallery",
-        icon: Images,
-      },
-      {
         id: "users",
         title: "Users",
         url: "/dashboard/users",
